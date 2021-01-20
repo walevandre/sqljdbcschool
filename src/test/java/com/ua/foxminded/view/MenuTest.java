@@ -1,7 +1,7 @@
 package com.ua.foxminded.view;
 
-import com.ua.foxminded.controller.service.SchService;
 import com.ua.foxminded.controller.service.SchoolService;
+import com.ua.foxminded.controller.service.SchoolServiceImpl;
 import com.ua.foxminded.controller.service.SchoolServiceException;
 import com.ua.foxminded.controller.service.reader.ConsoleReader;
 import com.ua.foxminded.controller.service.reader.ReaderException;
@@ -23,7 +23,7 @@ import static org.mockito.ArgumentMatchers.*;
 
 class MenuTest {
 
-    private SchService schService = Mockito.mock(SchoolService.class);
+    private SchoolService schService = Mockito.mock(SchoolServiceImpl.class);
     private FormatterToView toView = Mockito.mock(FormatterToView.class);
     private ConsoleReader consoleReader = Mockito.mock(ConsoleReader.class);
 

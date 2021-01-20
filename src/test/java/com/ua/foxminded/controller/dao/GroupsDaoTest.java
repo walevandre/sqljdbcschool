@@ -1,10 +1,9 @@
 package com.ua.foxminded.controller.dao;
 
-import com.ua.foxminded.controller.dao.GroupsDao;
 import com.ua.foxminded.controller.dao.exceptions.DAOException;
 import com.ua.foxminded.controller.service.DBService.DBDeployment;
 import com.ua.foxminded.controller.service.DBService.SqlExecuteException;
-import com.ua.foxminded.controller.service.testdata.GeneratorData;
+import com.ua.foxminded.controller.service.DBService.SqlExecutor;
 import com.ua.foxminded.domain.Group;
 import com.ua.foxminded.domain.Student;
 import org.hamcrest.collection.IsEmptyCollection;
@@ -18,16 +17,25 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class GroupsDaoTest {
 
     private static GroupsDao groupsDao = new GroupsDao();
+    private DBDeployment dbDeployment = new DBDeployment(new SqlExecutor());
 
     @BeforeEach
     void setup() {
-        DBDeployment dbDeployment = new DBDeployment();
         try {
             dbDeployment.deploy();
+        } catch (SqlExecuteException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    private void dropTable() {
+        try {
+            dbDeployment.dropAllTables();
         } catch (SqlExecuteException e) {
             System.out.println(e.getMessage());
         }
@@ -57,6 +65,17 @@ class GroupsDaoTest {
 
         assertEquals(expected.id(), actual.id());
         assertEquals(expected.name(), actual.name());
+    }
+
+    @Test
+    void saveListTest() throws DAOException {
+        List<Group> groups = new ArrayList<>();
+        groups.add(new Group().name("ll-10"));
+        groups.add(new Group().name("PP-20"));
+        groups.add(new Group().name("YY-20"));
+
+        int[] insertedId = groupsDao.saveList(groups);
+        assertEquals(groups.size(), insertedId.length);
     }
 
     @Test
@@ -92,5 +111,74 @@ class GroupsDaoTest {
 
         assertEquals(expected.get(1).id(), actual.get(1).id());
         assertEquals(expected.get(1).name(), actual.get(1).name());
+    }
+
+    @Test
+    void getByIdShouldThrowException() {
+        dropTable();
+        Group group = new Group().id(1);
+        Exception exception = assertThrows(DAOException.class, () -> groupsDao.getById(group.id()));
+        assertEquals("Cannot get group by id=" + group.id(), exception.getMessage());
+    }
+
+    @Test
+    void getAllShouldThrowException() {
+        dropTable();
+        Exception exception = assertThrows(DAOException.class, () -> groupsDao.getAll());
+        assertEquals("Cannot get all groups", exception.getMessage());
+    }
+
+    @Test
+    void saveShouldThrowException() {
+        dropTable();
+        Group group = new Group().name("XX-10");
+        Exception exception = assertThrows(DAOException.class, () -> groupsDao.save(group));
+        assertEquals("Cannot insert into groups", exception.getMessage());
+    }
+
+    @Test
+    void saveListShouldThrowException() {
+        List<Group> groups = new ArrayList<>();
+        Exception exception = assertThrows(DAOException.class, () -> groupsDao.saveList(groups));
+        assertEquals("Nothing was inserted", exception.getMessage());
+
+        dropTable();
+        groups.add(new Group().name("XX-10"));
+        groups.add(new Group().name("ZZ-10"));
+        groups.add(new Group().name("YY-10"));
+        exception = assertThrows(DAOException.class, () -> groupsDao.saveList(groups));
+        assertEquals("Cannot save list of groups", exception.getMessage());
+    }
+
+    @Test
+    void updateShouldThrowException() {
+        Group group = new Group().id(100).name("XX-10");
+        Exception exception = assertThrows(DAOException.class, () -> groupsDao.update(group));
+        assertEquals("No update by id=100", exception.getMessage());
+        dropTable();
+        exception = assertThrows(DAOException.class, () -> groupsDao.update(group));
+        assertEquals("Cannot update groups by id=100", exception.getMessage());
+    }
+
+    @Test
+    void deleteShouldReturnFalse() throws DAOException {
+        Group group = new Group().id(100).name("XX-10");
+        assertEquals(false, groupsDao.delete(group));
+    }
+
+    @Test
+    void deleteShouldThrowException() {
+        dropTable();
+        Group group = new Group().id(1);
+        Exception exception = assertThrows(DAOException.class, () -> groupsDao.delete(group));
+        assertEquals("Cannot delete group by id=1", exception.getMessage());
+    }
+
+    @Test
+    void findAllWithLessOrEqualsStudentCountShouldThrowException() {
+        dropTable();
+        int countStudents = 10;
+        Exception exception = assertThrows(DAOException.class, () -> groupsDao.findAllWithLessOrEqualsStudentCount(countStudents));
+        assertEquals("Cannot find all groups with less or equals student count=" + countStudents, exception.getMessage());
     }
 }

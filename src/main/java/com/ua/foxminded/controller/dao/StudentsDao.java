@@ -68,8 +68,8 @@ public class StudentsDao implements DAO<Student> {
                 student.courses(courses);
                 optStudent = Optional.ofNullable(student);
             }
-        } catch (Exception e) {
-            throw new DAOException("Cannot get student by id", e);
+        } catch (SQLException e) {
+            throw new DAOException("Cannot get student by id=" + id, e);
         }
         return optStudent;
     }
@@ -123,7 +123,7 @@ public class StudentsDao implements DAO<Student> {
     }
 
     @Override
-    public void saveList(List<Student> students) throws DAOException {
+    public int[] saveList(List<Student> students) throws DAOException {
         String sql = "INSERT INTO " + TABLE_STUDENTS + " (group_id, first_name, last_name) VALUES (?,?,?)";
 
         try (Connection connection = DataSource.getConnection();
@@ -138,7 +138,11 @@ public class StudentsDao implements DAO<Student> {
                     log.debug("Cannot create batch", e);
                 }
             });
-            pStatement.executeBatch();
+            int[] insertedId = pStatement.executeBatch();
+            if (insertedId.length == 0) {
+                throw new DAOException("Nothing was inserted");
+            }
+            return insertedId;
         } catch (SQLException e) {
             throw new DAOException("Cannot save list of students", e);
         }
@@ -155,7 +159,9 @@ public class StudentsDao implements DAO<Student> {
             pStatement.setString(2, student.firstName());
             pStatement.setString(3, student.lastName());
             pStatement.setInt(4, student.id());
-            pStatement.executeUpdate();
+            if (pStatement.executeUpdate() == 0) {
+                throw new DAOException("No update by id=" + student.id());
+            }
         } catch (SQLException e) {
             throw new DAOException("Cannot update student by id=" + student.id(), e);
         }
@@ -237,7 +243,7 @@ public class StudentsDao implements DAO<Student> {
             }
             student.courses(courses);
         } catch (SQLException e) {
-            throw new DAOException("Cannot find courses related to student", e);
+            throw new DAOException("Cannot find courses related to student with id " + student.id(), e);
         }
         return student;
     }

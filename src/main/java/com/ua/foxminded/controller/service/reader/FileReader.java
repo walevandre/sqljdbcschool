@@ -1,6 +1,7 @@
 package com.ua.foxminded.controller.service.reader;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.List;
@@ -15,7 +16,7 @@ public class FileReader {
         InputStream inputStream = classLoader.getResourceAsStream(fileName);
 
         if (inputStream == null) {
-            throw new ReaderException("file not found! " + fileName);
+            throw new ReaderException("file not found! " + fileName, new FileNotFoundException());
         } else {
             return inputStream;
         }

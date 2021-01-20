@@ -29,7 +29,7 @@ class SchoolServiceTest {
     private CoursesDao coursesDao = Mockito.mock(CoursesDao.class);
     private GroupsDao groupsDao = Mockito.mock(GroupsDao.class);
 
-    private SchService serviceSchool = new com.ua.foxminded.controller.service.SchoolService(studentsDao, coursesDao, groupsDao);
+    private SchoolService serviceSchool = new SchoolServiceImpl(studentsDao, coursesDao, groupsDao);
 
     @AfterEach
     void verifyNoMoreInteractionsAfterEachTest() {
@@ -61,6 +61,14 @@ class SchoolServiceTest {
     }
 
     @Test
+    void getAllStudentShouldThrowException() throws DAOException {
+        Mockito.when(studentsDao.getAll()).thenThrow(new DAOException("test"));
+        Exception exception = assertThrows(SchoolServiceException.class, () -> serviceSchool.getAllStudents());
+        Mockito.verify(studentsDao).getAll();
+        assertEquals("Error by action: test", exception.getMessage());
+    }
+
+    @Test
     void getAllCoursesTest() throws DAOException, SchoolServiceException {
         List<Course> expected = new ArrayList<>();
         expected.add(new Course().id(1).name("Algebra"));
@@ -78,6 +86,14 @@ class SchoolServiceTest {
         assertEquals(expected.get(1).name(), actual.get(1).name());
 
         Mockito.verify(coursesDao).getAll();
+    }
+
+    @Test
+    void getAllCoursesShouldThrowException() throws DAOException {
+        Mockito.when(coursesDao.getAll()).thenThrow(new DAOException("test"));
+        Exception exception = assertThrows(SchoolServiceException.class, () -> serviceSchool.getAllCourses());
+        Mockito.verify(coursesDao).getAll();
+        assertEquals("Error by action: test", exception.getMessage());
     }
 
     @Test
@@ -106,9 +122,14 @@ class SchoolServiceTest {
         assertEquals(student.firstName(), value.firstName());
         assertEquals(student.lastName(), value.lastName());
         assertEquals(student.groupId(), value.groupId());
-//
-//        Exception exception = assertThrows(SchoolServiceException.class, ()->serviceSchool.getAllStudents());
-//        assertEquals("Cannot get all students", exception.getMessage());
+    }
+
+    @Test
+    void getCourseByStudentShouldThrowException() throws DAOException {
+        Mockito.when(studentsDao.findCoursesByStudent(any())).thenThrow(new DAOException("test"));
+        Exception exception = assertThrows(SchoolServiceException.class, () -> serviceSchool.getCourseByStudent(any()));
+        Mockito.verify(studentsDao).findCoursesByStudent(any());
+        assertEquals("Error by action: test", exception.getMessage());
     }
 
     @Test
@@ -128,6 +149,14 @@ class SchoolServiceTest {
         assertEquals(expected.get(1).name(), actual.get(1).name());
 
         Mockito.verify(groupsDao).findAllWithLessOrEqualsStudentCount(anyInt());
+    }
+
+    @Test
+    void findGroupsByParamsShouldThrowException() throws DAOException {
+        Mockito.when(groupsDao.findAllWithLessOrEqualsStudentCount(anyInt())).thenThrow(new DAOException("test"));
+        Exception exception = assertThrows(SchoolServiceException.class, () -> serviceSchool.findGroupsByParams(anyInt()));
+        Mockito.verify(groupsDao).findAllWithLessOrEqualsStudentCount(anyInt());
+        assertEquals("Error by action: test", exception.getMessage());
     }
 
     @Test
@@ -157,6 +186,14 @@ class SchoolServiceTest {
     }
 
     @Test
+    void findStudentsByParamsShouldThrowException() throws DAOException {
+        Mockito.when(coursesDao.findStudentsOnCourse(any())).thenThrow(new DAOException("test"));
+        Exception exception = assertThrows(SchoolServiceException.class, () -> serviceSchool.findStudentsByParams(any()));
+        Mockito.verify(coursesDao).findStudentsOnCourse(any());
+        assertEquals("Error by action: test", exception.getMessage());
+    }
+
+    @Test
     void addNewStudentTest() throws DAOException, SchoolServiceException {
 
         Student expected = new Student().id(10).firstName("John").lastName("Hamilton").groupId(4);
@@ -180,6 +217,14 @@ class SchoolServiceTest {
     }
 
     @Test
+    void addNewStudentShouldThrowException() throws DAOException {
+        Mockito.when(studentsDao.save(any())).thenThrow(new DAOException("test"));
+        Exception exception = assertThrows(SchoolServiceException.class, () -> serviceSchool.addNewStudent(any()));
+        Mockito.verify(studentsDao).save(any());
+        assertEquals("Error by action: test", exception.getMessage());
+    }
+
+    @Test
     void deleteStudentTest() throws DAOException, SchoolServiceException {
         Mockito.when(studentsDao.delete(any())).thenReturn(true);
         Student expected = new Student().id(1).firstName("John").lastName("Hamilton");
@@ -198,23 +243,67 @@ class SchoolServiceTest {
     }
 
     @Test
+    void deleteStudentShouldThrowException() throws DAOException {
+        Mockito.when(studentsDao.delete(any())).thenThrow(new DAOException("test"));
+        Exception exception = assertThrows(SchoolServiceException.class, () -> serviceSchool.deleteStudent(any()));
+        Mockito.verify(studentsDao).delete(any());
+        assertEquals("Error by action: test", exception.getMessage());
+    }
+
+    @Test
+    void deleteStudentShouldShouldReturnFalse() throws DAOException, SchoolServiceException {
+        Mockito.when(studentsDao.delete(any())).thenReturn(false);
+        assertEquals(false, serviceSchool.deleteStudent(any()));
+        Mockito.verify(studentsDao).delete(any());
+    }
+
+    @Test
     void addStudentToCourseTest() throws DAOException, SchoolServiceException {
         Mockito.when(studentsDao.assignToCourse(anyInt(), anyInt())).thenReturn(true);
         Student expected = new Student().id(1).firstName("John").lastName("Hamilton");
-
         assertEquals(true, serviceSchool.addStudentToCourse(expected, 3));
         Mockito.verify(studentsDao).assignToCourse(3, expected.id());
+    }
+
+    @Test
+    void addStudentShouldThrowException() throws DAOException {
+        Mockito.when(studentsDao.assignToCourse(anyInt(), anyInt())).thenThrow(new DAOException("test"));
+        Exception exception = assertThrows(SchoolServiceException.class, () -> serviceSchool.addStudentToCourse(new Student().id(1), 1));
+        Mockito.verify(studentsDao).assignToCourse(anyInt(), anyInt());
+        assertEquals("Error by action: test", exception.getMessage());
+    }
+
+    @Test
+    void addStudentShouldShouldReturnFalse() throws DAOException, SchoolServiceException {
+        Mockito.when(studentsDao.assignToCourse(anyInt(), anyInt())).thenReturn(false);
+        assertEquals(false, serviceSchool.addStudentToCourse(new Student().id(1), 1));
+        Mockito.verify(studentsDao).assignToCourse(anyInt(), anyInt());
     }
 
     @Test
     void removeStudentFromCourseTest() throws DAOException, SchoolServiceException {
         Student student = new Student().id(1).firstName("John").lastName("Hamilton");
         Course course = new Course().id(1).name("Biology");
-
         Mockito.when(studentsDao.removeFromCourse(anyInt(), anyInt())).thenReturn(true);
         assertEquals(true, serviceSchool.removeStudentFromCourse(student, course));
-
         Mockito.verify(studentsDao).removeFromCourse(anyInt(), anyInt());
     }
+
+    @Test
+    void removeStudentShouldThrowException() throws DAOException {
+        Mockito.when(studentsDao.removeFromCourse(anyInt(), anyInt())).thenThrow(new DAOException("test"));
+        Exception exception = assertThrows(SchoolServiceException.class, () ->
+                serviceSchool.removeStudentFromCourse(new Student().id(1), new Course().id(1)));
+        Mockito.verify(studentsDao).removeFromCourse(anyInt(), anyInt());
+        assertEquals("Error by action: test", exception.getMessage());
+    }
+
+    @Test
+    void removeStudentShouldShouldReturnFalse() throws DAOException, SchoolServiceException {
+        Mockito.when(studentsDao.removeFromCourse(anyInt(), anyInt())).thenReturn(false);
+        assertEquals(false, serviceSchool.removeStudentFromCourse(new Student().id(1), new Course().id(1)));
+        Mockito.verify(studentsDao).removeFromCourse(anyInt(), anyInt());
+    }
+
 
 }

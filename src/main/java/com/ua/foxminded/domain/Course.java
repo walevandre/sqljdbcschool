@@ -7,6 +7,7 @@ import java.util.List;
 
 @Data
 @Accessors(fluent = true)
+@EqualsAndHashCode
 public class Course {
     private int id;
     private String name;

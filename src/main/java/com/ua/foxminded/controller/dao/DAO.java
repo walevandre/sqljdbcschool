@@ -13,7 +13,7 @@ public interface DAO<T> {
 
     T save(T t) throws DAOException;
 
-    void saveList (List<T> tList) throws DAOException;
+    int[] saveList (List<T> tList) throws DAOException;
 
     T update(T t) throws DAOException;
 

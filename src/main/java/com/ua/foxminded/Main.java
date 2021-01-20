@@ -3,14 +3,13 @@ package com.ua.foxminded;
 import com.ua.foxminded.controller.dao.CoursesDao;
 import com.ua.foxminded.controller.dao.GroupsDao;
 import com.ua.foxminded.controller.dao.StudentsDao;
-import com.ua.foxminded.controller.dao.exceptions.DAOException;
 import com.ua.foxminded.controller.service.DBService.DBDeployment;
 import com.ua.foxminded.controller.service.DBService.SqlExecuteException;
-import com.ua.foxminded.controller.service.SchService;
+import com.ua.foxminded.controller.service.DBService.SqlExecutor;
 import com.ua.foxminded.controller.service.SchoolService;
+import com.ua.foxminded.controller.service.SchoolServiceImpl;
 import com.ua.foxminded.controller.service.reader.ConsoleReader;
-import com.ua.foxminded.controller.service.testdata.GeneratorData;
-import com.ua.foxminded.controller.service.testdata.GeneratorDataException;
+import com.ua.foxminded.controller.service.testdata.*;
 import com.ua.foxminded.view.FormatterToView;
 import com.ua.foxminded.view.Menu;
 import org.slf4j.Logger;
@@ -27,37 +26,33 @@ public class Main {
 
         log.info("Start application");
 
-        DBDeployment dbDeployment = new DBDeployment();
-        GeneratorData testData = new GeneratorData();
         GroupsDao groupsDao = new GroupsDao();
         CoursesDao coursesDao = new CoursesDao();
         StudentsDao studentsDao = new StudentsDao();
+        DBDeployment dbDeployment = new DBDeployment(new SqlExecutor());
+        CoursesGenerator coursesGenerator = new CoursesGenerator();
+        GroupsGenerator groupsGenerator = new GroupsGenerator();
+        StudentsGenerator studentsGenerator = new StudentsGenerator();
+        GeneratorData testData = new GeneratorData(studentsGenerator, coursesGenerator, groupsGenerator);
 
-        SchService schoolService = new SchoolService(studentsDao, coursesDao, groupsDao);
+        SchoolService schoolService = new SchoolServiceImpl(studentsDao, coursesDao, groupsDao);
         FormatterToView toView = new FormatterToView();
         ConsoleReader consoleReader = new ConsoleReader(new BufferedReader(new InputStreamReader(System.in)));
         Menu menu = new Menu(schoolService, toView, consoleReader);
 
         try {
-            coursesDao.getById(100);
-        } catch (DAOException e) {
-            e.printStackTrace();
+            dbDeployment.deploy();
+            testData.generateAndStore(studentsDao, coursesDao, groupsDao);
+        } catch (SqlExecuteException | GeneratorDataException e) {
+            log.error(e.getMessage());
+        } catch (RuntimeException e) {
+            log.error("System error: Generate test data. " + e);
         }
 
-
-//        try {
-//            dbDeployment.deploy();
-//            testData.generateAndStore(studentsDao, coursesDao, groupsDao);
-//        } catch (SqlExecuteException | GeneratorDataException e) {
-//            log.error(e.getMessage());
-//        } catch (RuntimeException e) {
-//            log.error("System error: Generate test data. " + e);
-//        }
-//
-//        try {
-//            menu.showMenu();
-//        } catch (RuntimeException e) {
-//            log.error("System error: " + e);
-//        }
+        try {
+            menu.showMenu();
+        } catch (RuntimeException e) {
+            log.error("System error: " + e);
+        }
     }
 }

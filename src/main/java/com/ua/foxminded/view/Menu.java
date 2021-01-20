@@ -1,7 +1,7 @@
 package com.ua.foxminded.view;
 
 import com.ua.foxminded.controller.service.RandomlyGenerator;
-import com.ua.foxminded.controller.service.SchService;
+import com.ua.foxminded.controller.service.SchoolService;
 import com.ua.foxminded.controller.service.SchoolServiceException;
 import com.ua.foxminded.controller.service.reader.ConsoleReader;
 import com.ua.foxminded.controller.service.reader.ReaderException;
@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 
 public class Menu {
 
@@ -21,12 +20,12 @@ public class Menu {
     private static final String EMPTY_LINE = "";
     private static final int GROUP_SIZE = 20;
 
-    private SchService schoolService;
+    private SchoolService schoolService;
     private FormatterToView toView;
     private ConsoleReader consoleReader;
 
 
-    public Menu(SchService schoolService, FormatterToView toView, ConsoleReader consoleReader) {
+    public Menu(SchoolService schoolService, FormatterToView toView, ConsoleReader consoleReader) {
         this.schoolService = schoolService;
         this.toView = toView;
         this.consoleReader = consoleReader;

@@ -8,16 +8,23 @@ public class GeneratorData {
 
     private static final String COURSES_TEST_DATA = "testData/courses.txt";
 
+    private StudentsGenerator studentsGenerator ;
+    private CoursesGenerator coursesGenerator;
+    private GroupsGenerator groupsGenerator;
+
+
+    public GeneratorData(StudentsGenerator studentsGenerator, CoursesGenerator coursesGenerator, GroupsGenerator groupsGenerator) {
+        this.studentsGenerator = studentsGenerator;
+        this.coursesGenerator = coursesGenerator;
+        this.groupsGenerator = groupsGenerator;
+    }
+
     public void generateAndStore(StudentsDao studentsDao, CoursesDao coursesDao, GroupsDao groupsDao) throws GeneratorDataException {
 
-        Generator coursesGenerator = new CoursesGenerator();
-        Generator groupsGenerator = new GroupsGenerator();
-        StudentsGenerator studentsGenerator = new StudentsGenerator();
-
-            coursesGenerator.generateFromFile(COURSES_TEST_DATA, coursesDao);
-            groupsGenerator.generateRandomly(groupsDao);
-            studentsGenerator.generateRandomly(studentsDao);
-            studentsGenerator.assignCourseForStudentRandomly(studentsDao, coursesDao);
-            studentsGenerator.assignStudentsToGroups(studentsDao, groupsDao);
+        coursesGenerator.generateFromFile(COURSES_TEST_DATA, coursesDao);
+        groupsGenerator.generateRandomly(groupsDao);
+        studentsGenerator.generateRandomly(studentsDao);
+        studentsGenerator.assignCourseForStudentRandomly(studentsDao, coursesDao);
+        studentsGenerator.assignStudentsToGroups(studentsDao, groupsDao);
     }
 }

@@ -53,7 +53,7 @@ public class GroupsDao implements DAO<Group> {
                 optGroups = Optional.ofNullable(group);
             }
         } catch (SQLException e) {
-            throw new DAOException("Cannot get group by id" + id, e);
+            throw new DAOException("Cannot get group by id=" + id, e);
         }
         return optGroups;
     }
@@ -100,7 +100,7 @@ public class GroupsDao implements DAO<Group> {
     }
 
     @Override
-    public void saveList(List<Group> groups) throws DAOException {
+    public int[] saveList(List<Group> groups) throws DAOException {
 
         String sql = "INSERT INTO " + TABLE_GROUPS + " (name) VALUES (?)";
 
@@ -114,11 +114,14 @@ public class GroupsDao implements DAO<Group> {
                     log.debug("Cannot create the batch");
                 }
             });
-            pStatement.executeBatch();
+            int[] insertedId = pStatement.executeBatch();
+            if (insertedId.length == 0) {
+                throw new DAOException("Nothing was inserted");
+            }
+            return insertedId;
         } catch (SQLException e) {
             throw new DAOException("Cannot save list of groups", e);
         }
-
     }
 
     @Override
@@ -129,12 +132,13 @@ public class GroupsDao implements DAO<Group> {
              PreparedStatement pStatement = connection.prepareStatement(sql)) {
             pStatement.setString(1, group.name());
             pStatement.setInt(2, group.id());
-            pStatement.executeUpdate();
-
+            if (pStatement.executeUpdate() == 0) {
+                throw new DAOException("No update by id=" + group.id());
+            }
+            return group;
         } catch (SQLException e) {
             throw new DAOException("Cannot update groups by id=" + group.id(), e);
         }
-        return group;
     }
 
     @Override
@@ -149,7 +153,7 @@ public class GroupsDao implements DAO<Group> {
                 ifExecute = false;
             }
         } catch (SQLException e) {
-            throw new DAOException("Cannot delete group " + group.toString(), e);
+            throw new DAOException("Cannot delete group by id=" + group.id(), e);
         }
         return ifExecute;
     }

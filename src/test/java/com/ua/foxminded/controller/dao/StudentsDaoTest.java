@@ -3,15 +3,14 @@ package com.ua.foxminded.controller.dao;
 import com.ua.foxminded.controller.dao.exceptions.DAOException;
 import com.ua.foxminded.controller.service.DBService.DBDeployment;
 import com.ua.foxminded.controller.service.DBService.SqlExecuteException;
-import com.ua.foxminded.controller.service.testdata.GeneratorData;
+import com.ua.foxminded.controller.service.DBService.SqlExecutor;
 import com.ua.foxminded.domain.Course;
 import com.ua.foxminded.domain.Group;
 import com.ua.foxminded.domain.Student;
 import org.hamcrest.collection.IsEmptyCollection;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,12 +22,20 @@ import static org.junit.jupiter.api.Assertions.*;
 class StudentsDaoTest {
 
     private static StudentsDao studentsDao = new StudentsDao();
+    private DBDeployment dbDeployment = new DBDeployment(new SqlExecutor());
 
-    @BeforeAll
-    static void setup() {
-        DBDeployment dbDeployment = new DBDeployment();
+    @BeforeEach
+    void setup() {
         try {
             dbDeployment.deploy();
+        } catch (SqlExecuteException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    private void dropTable() {
+        try {
+            dbDeployment.dropAllTables();
         } catch (SqlExecuteException e) {
             System.out.println(e.getMessage());
         }
@@ -77,6 +84,24 @@ class StudentsDaoTest {
         assertEquals(expected.group(), actual.group());
         assertEquals(expected.groupId(), actual.groupId());
         assertEquals(expected.courses(), actual.courses());
+    }
+
+    @Test
+    void saveListStudentsTest() throws DAOException {
+        List<Student> students = new ArrayList<>();
+        students.add(new Student().firstName("John").lastName("Williams").groupId(1));
+        students.add(new Student().firstName("Natan").lastName("White").groupId(1));
+        students.add(new Student().firstName("Ethan").lastName("Hamilton").groupId(1));
+        students.add(new Student().firstName("Jakub").lastName("Bailey").groupId(2));
+
+        int[] insertedId = studentsDao.saveList(students);
+        assertEquals(students.size(), insertedId.length);
+
+        Student actual = studentsDao.getById(insertedId[0]).get();
+        assertEquals("John", actual.firstName());
+        assertEquals("Williams", actual.lastName());
+        assertEquals(1, actual.groupId());
+
     }
 
     @Test
@@ -180,10 +205,95 @@ class StudentsDaoTest {
     }
 
     @Test
-    public void getStudentsByIdThrowsException() throws DAOException, SQLException {
-        Student student = null;
+    void getStudentsByIdShouldThrowExceptionWhenTableNotFound() {
+        dropTable();
+        Student student = new Student().id(1);
+        Exception exception = assertThrows(DAOException.class, () -> studentsDao.getById(student.id()));
+        assertEquals("Cannot get student by id=" + student.id(), exception.getMessage());
+    }
 
-        Exception exception = assertThrows(DAOException.class, ()->studentsDao.update(student));
+    @Test
+    void getAllStudentsByIdShouldThrowExceptionWhenTableNotFound() {
+        dropTable();
+        Exception exception = assertThrows(DAOException.class, () -> studentsDao.getAll());
+        assertEquals("Cannot get all students", exception.getMessage());
+    }
+
+    @Test
+    void saveShouldThrowExceptionWhenTableNotFound() {
+        dropTable();
+        Student student = new Student().firstName("John").lastName("Williams");
+        Exception exception = assertThrows(DAOException.class, () -> studentsDao.save(student));
+        assertEquals("Cannot insert into student", exception.getMessage());
+    }
+
+
+    @Test
+    void saveListShouldThrowExceptionWhenTableNotFound() {
+        dropTable();
+        List<Student> students = new ArrayList<>();
+        Exception exception = assertThrows(DAOException.class, () -> studentsDao.saveList(students));
+        assertEquals("Cannot save list of students", exception.getMessage());
+    }
+
+    @Test
+    void saveListShouldThrowExceptionWhenNothingWasInserted() {
+        List<Student> students = new ArrayList<>();
+        Exception exception = assertThrows(DAOException.class, () -> studentsDao.saveList(students));
+        assertEquals("Nothing was inserted", exception.getMessage());
+    }
+
+    @Test
+    void updateStudentsByIdShouldThrowExceptionWhenTableNotFound() {
+        dropTable();
+        Student student = new Student().id(1);
+        Exception exception = assertThrows(DAOException.class, () -> studentsDao.update(student));
         assertEquals("Cannot update student by id=" + student.id(), exception.getMessage());
+    }
+
+    @Test
+    void updateStudentsByIdShouldThrowExceptionWhenIdNoExists() {
+        Student student = new Student().id(-1);
+        Exception exception = assertThrows(DAOException.class, () -> studentsDao.update(student));
+        assertEquals("No update by id=" + student.id(), exception.getMessage());
+    }
+
+    @Test
+    void deleteShouldThrowExceptionWhenIdNoExists() {
+        dropTable();
+        Student student = new Student().id(1);
+        Exception exception = assertThrows(DAOException.class, () -> studentsDao.delete(student));
+        assertEquals("Cannot delete student " + student.id(), exception.getMessage());
+    }
+
+    @Test
+    void deleteReturnsFalse() throws DAOException {
+        Student student = new Student().id(-1);
+        assertEquals(false, studentsDao.delete(student));
+    }
+
+    @Test
+    void assignToCourseShouldThrowExceptionWhenIdNoExists() {
+        Exception exception = assertThrows(DAOException.class, () -> studentsDao.assignToCourse(-1, 100));
+        assertEquals("Cannot assign student id=100 to course id=-1", exception.getMessage());
+    }
+
+    @Test
+    void removeFromCourseShouldThrowExceptionWhenIdNoExists() {
+        dropTable();
+        Exception exception = assertThrows(DAOException.class, () -> studentsDao.removeFromCourse(1, 1));
+        assertEquals("Cannot remove student id=1 to course id=1", exception.getMessage());
+    }
+
+    @Test
+    void removeFromCourseReturnsFalse() throws DAOException {
+        assertEquals(false, studentsDao.removeFromCourse(100, 100));
+    }
+
+    @Test
+    void findCourseByStudentShouldThrowException(){
+        dropTable();
+        Exception exception = assertThrows(DAOException.class, () -> studentsDao.findCoursesByStudent(new Student().id(1)));
+        assertEquals("Cannot find courses related to student with id 1", exception.getMessage());
     }
 }

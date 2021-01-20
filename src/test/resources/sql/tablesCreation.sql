@@ -23,15 +23,15 @@ CREATE TABLE courses
 (
     id          SERIAL PRIMARY KEY,
     name        VARCHAR(64) NOT NULL,
-    description TEXT DEFAULT NULL,
-    UNIQUE (name)
+    description TEXT DEFAULT NULL
+--     UNIQUE (name)
 );
 
 CREATE TABLE students_courses
 (
     student_id INT REFERENCES students (id) ON DELETE CASCADE,
-    course_id  INT REFERENCES courses (id) ON DELETE CASCADE,
-    CONSTRAINT students_courses_pkey PRIMARY KEY (student_id, course_id)
+    course_id  INT REFERENCES courses (id) ON DELETE CASCADE
+--     CONSTRAINT students_courses_pkey PRIMARY KEY (student_id, course_id)
 );
 
 INSERT INTO students (group_id, first_name, last_name)
